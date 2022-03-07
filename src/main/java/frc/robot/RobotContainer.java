@@ -29,6 +29,9 @@ public class RobotContainer {
   private final SlewRateLimiter m_speedLimiter = new SlewRateLimiter(3);
   private final SlewRateLimiter m_rotLimiter = new SlewRateLimiter(3);
 
+  final double xSpeed = -m_speedLimiter.calculate(joystick.getY()) * DriveTrain.kMaxSpeed;
+
+  final double rot = -m_rotLimiter.calculate(joystick.getX()) * DriveTrain.kMaxAngularSpeed;
   // The robot's subsystems and commands are defined here...
   //private final ExampleSubsystem m_exampleSubsystem = new ExampleSubsystem();
 
@@ -39,19 +42,23 @@ public class RobotContainer {
     
     // Get the x speed. We are inverting this because Xbox controllers return
     // negative values when we push forward.
-    final var xSpeed = -m_speedLimiter.calculate(joystick.getY()) * DriveTrain.kMaxSpeed;
+    
 
     // Get the rate of angular rotation. We are inverting this because we want a
     // positive value when we pull to the left (remember, CCW is positive in
     // mathematics). Xbox controllers return positive values when you pull to
     // the right by default.
-    final var rot = -m_rotLimiter.calculate(joystick.getX()) * DriveTrain.kMaxAngularSpeed;
+    
     // Configure the button bindings
     configureButtonBindings();
 
     m_drive.setDefaultCommand(
-    new KinematicCmd(m_drive, xSpeed, rot)
+    new KinematicCmd(m_drive, xSpeed, rot)    
     );
+    m_drive.setDefaultCommand(
+      new OdometryCmd(m_drive)
+    );
+
   }
 
   /**
@@ -71,7 +78,6 @@ public class RobotContainer {
   public Command getAutonomousCommand() {
     // An ExampleCommand will run in autonomous
     return new SequentialCommandGroup( //
-    new KinematicCmd(m_drive, 1, 2),
-    new OdometryCmd(m_drive));
+    new KinematicCmd(m_drive, xSpeed, rot) );
   }
 }

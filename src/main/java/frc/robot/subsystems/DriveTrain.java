@@ -32,8 +32,8 @@ public class DriveTrain extends SubsystemBase {
   private static final double kWheelRadius = 0.0508; // meters
   private static final int kEncoderResolution = 4096;
   
-  private final PIDController m_leftPIDController = new PIDController(1, 0, 0);     //kP ,kI , pD
-  private final PIDController m_rightPIDController = new PIDController(1, 0, 0);    //kP , kI , pD
+  private final PIDController m_leftPIDController = new PIDController(1, 0, 0);     //kP ,kI , kD
+  private final PIDController m_rightPIDController = new PIDController(1, 0, 0);    //kP , kI , kD
 
   private final MotorController m_leftLeader = new Victor(1);
   private final MotorController m_leftFollower = new Victor(2);
@@ -72,8 +72,8 @@ public class DriveTrain extends SubsystemBase {
   }
 
   public void setSpeeds(DifferentialDriveWheelSpeeds speeds) {
-    final double leftFeedforward = m_feedforward.calculate(speeds.leftMetersPerSecond);
-    final double rightFeedforward = m_feedforward.calculate(speeds.rightMetersPerSecond);
+    final double leftFeedforward = m_feedforward.calculate(speeds.leftMetersPerSecond); // Speed of the left side of the robot
+    final double rightFeedforward = m_feedforward.calculate(speeds.rightMetersPerSecond); // Speed ofo the right side of the robot
 
     final double leftOutput =
         m_leftPIDController.calculate(m_leftEncoder.getRate(), speeds.leftMetersPerSecond);
