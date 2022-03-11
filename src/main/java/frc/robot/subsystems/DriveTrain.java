@@ -21,6 +21,8 @@ import edu.wpi.first.wpilibj.I2C.Port;
 import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.motorcontrol.Victor;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class DriveTrain extends SubsystemBase {
   /** Creates a new DriveTrain. */
@@ -42,6 +44,8 @@ public class DriveTrain extends SubsystemBase {
 
   private final Encoder m_leftEncoder = new Encoder(0, 1);
   private final Encoder m_rightEncoder = new Encoder(2, 3);
+
+  private final Field2d m_field = new Field2d();
 
   private final MotorControllerGroup m_leftGroup =
       new MotorControllerGroup(m_leftLeader, m_leftFollower);
@@ -68,6 +72,8 @@ public class DriveTrain extends SubsystemBase {
     m_rightEncoder.reset();
 
     m_rightGroup.setInverted(true);
+
+    SmartDashboard.putData("Field", m_field);
 
   }
 
@@ -96,12 +102,11 @@ public class DriveTrain extends SubsystemBase {
 
   @Override
   public void periodic() {
+    m_field.setRobotPose(m_odometry.getPoseMeters());
     // This method will be called once per scheduler run
   }
   @Override
   public void simulationPeriodic() {
     // This method will be called once per scheduler run during simulation
   }
-
-
 }
