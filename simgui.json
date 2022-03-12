@@ -11,7 +11,36 @@
       "/LiveWindow/Ungrouped/PIDController[1]": "PIDController",
       "/LiveWindow/Ungrouped/PIDController[2]": "PIDController",
       "/LiveWindow/Ungrouped/Scheduler": "Scheduler",
-      "/LiveWindow/Ungrouped/navX-Sensor[1]": "Gyro"
+      "/LiveWindow/Ungrouped/navX-Sensor[1]": "Gyro",
+      "/SmartDashboard/Field": "Field2d"
+    },
+    "windows": {
+      "/SmartDashboard/Field": {
+        "Enco-Gyro": {
+          "arrowSize": 0,
+          "style": "Line"
+        },
+        "Path": {
+          "arrowSize": 0,
+          "style": "Line"
+        },
+        "image": "C:\\Users\\user\\Desktop\\Ekran Alıntısı.PNG",
+        "window": {
+          "visible": true
+        }
+      }
     }
+  },
+  "NetworkTables": {
+    "SmartDashboard": {
+      "Field": {
+        "open": true
+      },
+      "open": true
+    },
+    "timestamp": true
+  },
+  "NetworkTables View": {
+    "visible": false
   }
 }

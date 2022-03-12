@@ -122,9 +122,6 @@ public class RobotContainer {
 */
 
 
-
-
-
 // Create and push Field2d to SmartDashboard.
 Field2d m_field = new Field2d();
 Field2d m_field2 = new Field2d();
