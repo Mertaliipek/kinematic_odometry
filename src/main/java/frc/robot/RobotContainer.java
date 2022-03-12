@@ -109,7 +109,7 @@ public class RobotContainer {
       TrajectoryGenerator.generateTrajectory(
         new Pose2d(7.708452,2.252027, Rotation2d.fromDegrees(0)),
         List.of(new Translation2d(5.110956,2.086360),new Translation2d(1.426664,1.424512)),
-        new Pose2d(7.708452, 2.252027, Rotation2d.fromDegrees(0)),  // x , y
+        new Pose2d(6.920916, 2.641690, Rotation2d.fromDegrees(0)),  // x , y
         config);
 
 
