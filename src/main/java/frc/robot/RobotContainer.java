@@ -4,15 +4,29 @@
 
 package frc.robot;
 
-import edu.wpi.first.math.filter.SlewRateLimiter;
-import edu.wpi.first.wpilibj.GenericHID;
+import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.RamseteController;
+import edu.wpi.first.math.controller.SimpleMotorFeedforward;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.trajectory.Trajectory;
+import edu.wpi.first.math.trajectory.TrajectoryConfig;
+import edu.wpi.first.math.trajectory.TrajectoryGenerator;
+import edu.wpi.first.math.trajectory.constraint.DifferentialDriveVoltageConstraint;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
-import frc.robot.commands.KinematicCmd;
-import frc.robot.commands.OdometryCmd;
-import frc.robot.subsystems.DriveTrain;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.Constants.AutoConstants;
+import frc.robot.Constants.DriveConstants;
+import frc.robot.Constants.OIConstants;
+import frc.robot.subsystems.DriveSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.RamseteCommand;
+import edu.wpi.first.wpilibj2.command.RunCommand;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+import java.util.List;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -21,53 +35,40 @@ import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
  * subsystems, commands, and button mappings) should be declared here.
  */
 public class RobotContainer {
+  // The robot's subsystems
+  private final DriveSubsystem m_robotDrive = new DriveSubsystem();
 
-  private final Joystick joystick = new Joystick(0);
-  private final DriveTrain m_drive = new DriveTrain();
-
-  // Slew rate limiters to make joystick inputs more gentle; 1/3 sec from 0 to 1.
-  private final SlewRateLimiter m_speedLimiter = new SlewRateLimiter(3);
-  private final SlewRateLimiter m_rotLimiter = new SlewRateLimiter(3);
-
-  final double xSpeed = -m_speedLimiter.calculate(joystick.getY()) * DriveTrain.kMaxSpeed;
-
-  final double rot = -m_rotLimiter.calculate(joystick.getX()) * DriveTrain.kMaxAngularSpeed;
-  // The robot's subsystems and commands are defined here...
-  //private final ExampleSubsystem m_exampleSubsystem = new ExampleSubsystem();
-
-  //private final ExampleCommand m_autoCommand = new ExampleCommand(m_exampleSubsystem);
+  // The driver's controller
+  Joystick m_driverController = new Joystick(OIConstants.kDriverControllerPort);
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
-    
-    // Get the x speed. We are inverting this because Xbox controllers return
-    // negative values when we push forward.
-    
-
-    // Get the rate of angular rotation. We are inverting this because we want a
-    // positive value when we pull to the left (remember, CCW is positive in
-    // mathematics). Xbox controllers return positive values when you pull to
-    // the right by default.
-    
     // Configure the button bindings
     configureButtonBindings();
 
-    m_drive.setDefaultCommand(
-    new KinematicCmd(m_drive, xSpeed, rot)    
-    );
-    m_drive.setDefaultCommand(
-      new OdometryCmd(m_drive)
-    );
-
+    // Configure default commands
+    // Set the default drive command to split-stick arcade drive
+    m_robotDrive.setDefaultCommand(
+        // A split-stick arcade command, with forward/backward controlled by the left
+        // hand, and turning controlled by the right.
+        new RunCommand(
+            () ->
+                m_robotDrive.arcadeDrive(
+                    -m_driverController.getY(), m_driverController.getX()),
+            m_robotDrive));
   }
 
   /**
    * Use this method to define your button->command mappings. Buttons can be created by
-   * instantiating a {@link GenericHID} or one of its subclasses ({@link
-   * edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then passing it to a {@link
-   * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
+   * instantiating a {@link edu.wpi.first.wpilibj.GenericHID} or one of its subclasses ({@link
+   * edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then calling passing it to a
+   * {@link JoystickButton}.
    */
   private void configureButtonBindings() {
+    // Drive at half speed when the right bumper is held
+    new JoystickButton(m_driverController, 1)
+        .whenPressed(() -> m_robotDrive.setMaxOutput(0.5))
+        .whenReleased(() -> m_robotDrive.setMaxOutput(1));
   }
 
   /**
@@ -76,8 +77,87 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
-    // An ExampleCommand will run in autonomous
-    return new SequentialCommandGroup( //
-    new KinematicCmd(m_drive, xSpeed, rot) );
+    // Create a voltage constraint to ensure we don't accelerate too fast
+    var autoVoltageConstraint =
+        new DifferentialDriveVoltageConstraint(
+            new SimpleMotorFeedforward(
+                DriveConstants.ksVolts,
+                DriveConstants.kvVoltSecondsPerMeter,
+                DriveConstants.kaVoltSecondsSquaredPerMeter),
+            DriveConstants.kDriveKinematics,
+            10);
+
+    // Create config for trajectory
+    TrajectoryConfig config =
+        new TrajectoryConfig(
+                AutoConstants.kMaxSpeedMetersPerSecond,
+                AutoConstants.kMaxAccelerationMetersPerSecondSquared)
+            // Add kinematics to ensure max speed is actually obeyed
+            .setKinematics(DriveConstants.kDriveKinematics)
+            // Apply the voltage constraint
+            .addConstraint(autoVoltageConstraint);
+
+    // An example trajectory to follow.  All units in meters.
+    Trajectory trajectory =
+    TrajectoryGenerator.generateTrajectory(                  // 90
+      new Pose2d(7.375276,2.200692, Rotation2d.fromDegrees(-90)),
+      List.of(new Translation2d(7.375276,0.650519)),
+      new Pose2d(6.920915, 2.641690, Rotation2d.fromDegrees(0)),  // x , y
+      config);
+    
+      Trajectory trajectory2 =
+      TrajectoryGenerator.generateTrajectory(
+        new Pose2d(7.708452,2.252027, Rotation2d.fromDegrees(0)),
+        List.of(new Translation2d(5.110956,2.086360),new Translation2d(1.426664,1.424512)),
+        new Pose2d(7.708452, 2.252027, Rotation2d.fromDegrees(0)),  // x , y
+        config);
+
+
+
+
+/*new Pose2d(1.418903,1.474303, Rotation2d.fromDegrees(0)),
+      List.of(new Translation2d(5.034577, 2.099259)),
+      new Pose2d(7.416237, 0.586639, Rotation2d.fromDegrees(0)),  // x , y
+      new TrajectoryConfig(Units.feetToMeters(3.0), Units.feetToMeters(3.0)));
+*/
+
+
+
+
+
+// Create and push Field2d to SmartDashboard.
+Field2d m_field = new Field2d();
+Field2d m_field2 = new Field2d();
+SmartDashboard.putData(m_field);
+SmartDashboard.putData(m_field2);
+
+// Push the trajectory to Field2d.
+m_field.getObject("Path").setTrajectory(trajectory);
+m_field.getObject("Enco-Gyro").setTrajectory(trajectory2);
+
+
+    RamseteCommand ramseteCommand =
+        new RamseteCommand(
+            trajectory,
+            m_robotDrive::getPose,
+            new RamseteController(AutoConstants.kRamseteB, AutoConstants.kRamseteZeta),
+            new SimpleMotorFeedforward(
+                DriveConstants.ksVolts,
+                DriveConstants.kvVoltSecondsPerMeter,
+                DriveConstants.kaVoltSecondsSquaredPerMeter),
+            DriveConstants.kDriveKinematics,
+            m_robotDrive::getWheelSpeeds,
+            new PIDController(DriveConstants.kPDriveVel, 0.5, 0),
+            new PIDController(DriveConstants.kPDriveVel, 0.5, 0),
+            // RamseteCommand passes volts to the callback
+            m_robotDrive::tankDriveVolts,
+            m_robotDrive);
+            
+
+    // Reset odometry to the starting pose of the trajectory.
+    m_robotDrive.resetOdometry(trajectory.getInitialPose());
+
+    // Run path following command, then stop at the end.
+    return ramseteCommand.andThen(() -> m_robotDrive.tankDriveVolts(0, 0));
   }
 }
