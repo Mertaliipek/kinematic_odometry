@@ -14,6 +14,8 @@ import frc.robot.Constants.DriveConstants;
 import edu.wpi.first.wpilibj.interfaces.Gyro;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class DriveSubsystem extends SubsystemBase {
@@ -52,11 +54,15 @@ public class DriveSubsystem extends SubsystemBase {
   // Odometry class for tracking robot pose
   private final DifferentialDriveOdometry m_odometry;
 
+  private final Field2d m_field3 = new Field2d();
+
+
   /** Creates a new DriveSubsystem. */
   public DriveSubsystem() {
     // We need to invert one side of the drivetrain so that positive voltages
     // result in both sides moving forward. Depending on how your robot's
     // gearbox is constructed, you might have to invert the left side instead.
+    SmartDashboard.putData(m_field3);
     m_rightMotors.setInverted(true);
 
     // Sets the distance per pulse for the encoders
@@ -72,7 +78,11 @@ public class DriveSubsystem extends SubsystemBase {
     // Update the odometry in the periodic block
     m_odometry.update(
         m_gyro.getRotation2d(), m_leftEncoder.getDistance(), m_rightEncoder.getDistance());
-  }
+
+      
+        m_field3.setRobotPose(m_odometry.getPoseMeters());
+
+      }
 
   /**
    * Returns the currently-estimated pose of the robot.
