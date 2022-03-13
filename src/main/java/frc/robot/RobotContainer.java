@@ -102,7 +102,7 @@ public class RobotContainer {
     TrajectoryGenerator.generateTrajectory(                  // 90
       new Pose2d(7.375276,2.200692, Rotation2d.fromDegrees(-90)),
       List.of(new Translation2d(7.375276,0.650519)),
-      new Pose2d(6.920915, 2.641690, Rotation2d.fromDegrees(0)),  // x , y
+      new Pose2d(7.425834, 2.894907, Rotation2d.fromDegrees(30)),  // x , y
       config);
     
       Trajectory trajectory2 =
@@ -133,7 +133,7 @@ SmartDashboard.putData(m_field2);
 
 // Push the trajectory to Field2d.
 m_field.getObject("Path").setTrajectory(trajectory);
-m_field.getObject("Enco-Gyro").setTrajectory(trajectory2);
+//m_field.getObject("Enco-Gyro").setTrajectory(trajectory2);
 
 
     RamseteCommand ramseteCommand =
