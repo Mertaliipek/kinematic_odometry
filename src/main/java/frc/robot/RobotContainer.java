@@ -6,18 +6,23 @@ package frc.robot;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.RamseteController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.trajectory.Trajectory;
+import edu.wpi.first.math.trajectory.TrajectoryConfig;
+import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.math.trajectory.TrajectoryUtil;
+import edu.wpi.first.math.trajectory.constraint.DifferentialDriveVoltageConstraint;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.smartdashboard.Field2d;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OIConstants;
@@ -93,34 +98,57 @@ public class RobotContainer {
       Path trajectoryPath1 = Filesystem.getDeployDirectory().toPath().resolve(trajectoryJSON1);
       trajectory1 = TrajectoryUtil.fromPathweaverJson(trajectoryPath1);
    } catch (IOException ex) {
-      DriverStation.reportError("Unable to open trajectory: " + trajectoryJSON1, ex.getStackTrace());
+      DriverStation.reportError("Unable to open trajectory1: " + trajectoryJSON1, ex.getStackTrace());
    }
 
    try {
     Path trajectoryPath2 = Filesystem.getDeployDirectory().toPath().resolve(trajectoryJSON2);
     trajectory2 = TrajectoryUtil.fromPathweaverJson(trajectoryPath2);
  } catch (IOException ex) {
-    DriverStation.reportError("Unable to open trajectory: " + trajectoryJSON2, ex.getStackTrace());
+    DriverStation.reportError("Unable to open trajectory2: " + trajectoryJSON2, ex.getStackTrace());
  }
 
  try {
   Path trajectoryPath3 = Filesystem.getDeployDirectory().toPath().resolve(trajectoryJSON3);
   trajectory3 = TrajectoryUtil.fromPathweaverJson(trajectoryPath3);
 } catch (IOException ex) {
-  DriverStation.reportError("Unable to open trajectory: " + trajectoryJSON3, ex.getStackTrace());
+  DriverStation.reportError("Unable to open trajectory3: " + trajectoryJSON3, ex.getStackTrace());
 }
+/*
+var autoVoltageConstraint =
+new DifferentialDriveVoltageConstraint(
+    new SimpleMotorFeedforward(
+        DriveConstants.ksVolts,
+        DriveConstants.kvVoltSecondsPerMeter,
+        DriveConstants.kaVoltSecondsSquaredPerMeter),
+    DriveConstants.kDriveKinematics,
+    10);
 
 
 
+TrajectoryConfig config =
+new TrajectoryConfig(
+        AutoConstants.kMaxSpeedMetersPerSecond,
+        AutoConstants.kMaxAccelerationMetersPerSecondSquared)
+    // Add kinematics to ensure max speed is actually obeyed
+    .setKinematics(DriveConstants.kDriveKinematics)
+    .addConstraint(autoVoltageConstraint);
 
+// An example trajectory to follow.  All units in meters.
+Trajectory sTrajectory =
+TrajectoryGenerator.generateTrajectory(
+    // Start at the origin facing the +X direction
+    new Pose2d(0, 0, new Rotation2d(0)),
+    // Pass through these two interior waypoints, making an 's' curve path
+    List.of(new Translation2d(1, 1), new Translation2d(2, -1)),
+    // End 3 meters straight ahead of where we started, facing forward
+    new Pose2d(3, 0, new Rotation2d(0)),
+    // Pass config
+    config);
 
+*/
 
-    
-
-
-
-
-
+  
 /*new Pose2d(1.418903,1.474303, Rotation2d.fromDegrees(0)),
       List.of(new Translation2d(5.034577, 2.099259)),
       new Pose2d(7.416237, 0.586639, Rotation2d.fromDegrees(0)),  // x , y
@@ -193,6 +221,26 @@ m_field.getObject("Path").setTrajectory(trajectory);
                     m_robotDrive::tankDriveVolts,
                     m_robotDrive);
 
+                    /*
+                    RamseteCommand SramseteCommand =
+                    new RamseteCommand(
+                        sTrajectory,
+                        m_robotDrive::getPose,
+                        new RamseteController(AutoConstants.kRamseteB, AutoConstants.kRamseteZeta),
+                        new SimpleMotorFeedforward(
+                            DriveConstants.ksVolts,
+                            DriveConstants.kvVoltSecondsPerMeter,
+                            DriveConstants.kaVoltSecondsSquaredPerMeter),
+                        DriveConstants.kDriveKinematics,
+                        m_robotDrive::getWheelSpeeds,
+                        new PIDController(DriveConstants.kPDriveVel, 0.5, 0),
+                        new PIDController(DriveConstants.kPDriveVel, 0.5, 0),
+                        // RamseteCommand passes volts to the callback
+                        m_robotDrive::tankDriveVolts,
+                        m_robotDrive);
+*/
+
+
 
     
     // Reset odometry to the starting pose of the trajectory.
@@ -203,7 +251,7 @@ m_field.getObject("Path").setTrajectory(trajectory);
     
     return ramseteCommand.andThen(() -> ramseteCommand2.andThen(() -> ramseteCommand3.andThen(() -> m_robotDrive.tankDriveVolts(0, 0))));
 
-
+    //return SramseteCommand.andThen(() -> m_robotDrive.tankDriveVolts(0, 0));
 
 
   }
